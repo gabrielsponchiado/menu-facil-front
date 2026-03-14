@@ -25,7 +25,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Animations for Modals/Drawers */
 @keyframes slideInFromBottom {
   from {
     transform: translateY(100%);
@@ -59,3 +58,35 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.neon-blue-border {
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 
+    0 0 8px rgba(37, 99, 235, 0.3),
+    inset 0 0 4px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.neon-blue-border:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 
+    0 0 15px rgba(37, 99, 235, 0.5),
+    inset 0 0 6px rgba(59, 130, 246, 0.2);
+}
+
+.neon-blue-button {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);
+  transition: all 0.2s ease;
+}
+
+.neon-blue-button:hover {
+  background: #3b82f6;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.8);
+}
+
+.neon-blue-button:active {
+  transform: scale(0.95);
+}
+

@@ -62,7 +62,7 @@ export default function MenuPage() {
       />
 
       <div className="w-full h-64 relative shrink-0">
-        <Image src="/hero_tacos.png" alt="Featured" fill className="object-cover" priority />
+        <Image src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1600&auto=format&fit=crop" alt="Featured" fill className="object-cover" priority />
         <div className="absolute inset-0 bg-gradient-to-t from-[#111317] via-transparent to-transparent opacity-80" />
       </div>
 
