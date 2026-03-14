@@ -4,15 +4,16 @@ import React, { useState } from "react";
 import { Power } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { useRouter } from "next/navigation";
+import { FormErrors } from "@/types";
 
 export default function RegisterTabletPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: FormErrors = {};
 
     if (!name.trim()) {
       newErrors.name = "Nome é obrigatório";
@@ -78,7 +79,7 @@ export default function RegisterTabletPage() {
     router.push("/menu");
   };
 
-  const clearError = (field: string) => {
+  const clearError = (field: keyof FormErrors) => {
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
@@ -16,11 +17,31 @@ export function ProductDetailDrawer({ dish, onAdd, onClose }: ProductDetailDrawe
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-xl bg-[#111317] rounded-t-4xl border-t border-white/5 flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+        onClick={onClose} 
+      />
+      
+      <motion.div 
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        drag="y"
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 100 || info.velocity.y > 500) {
+            onClose();
+          }
+        }}
+        className="relative w-full max-w-xl bg-[#111317] rounded-t-4xl border-t border-white/5 flex flex-col max-h-[85vh] shadow-2xl z-10 touch-none"
+      >
         <div 
-          onClick={onClose}
-          className="w-12 h-1 bg-zinc-800 rounded-full mx-auto mt-3 mb-4 shrink-0 cursor-pointer hover:bg-zinc-700 transition-colors"
+          className="w-12 h-1 bg-zinc-800 rounded-full mx-auto mt-3 mb-4 shrink-0"
         />
         
         <div className="flex-1 overflow-y-auto px-6 pb-24 no-scrollbar">
@@ -60,7 +81,7 @@ export function ProductDetailDrawer({ dish, onAdd, onClose }: ProductDetailDrawe
             Adicionar (R$ {(dish.price * quantity).toFixed(2)})
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

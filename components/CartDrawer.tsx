@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
 import { Dish } from "@/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CartItem {
   dish: Dish;
@@ -29,11 +30,31 @@ export function CartDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-2xl bg-[#111317] rounded-t-[2.5rem] max-h-[90vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+        onClick={onClose} 
+      />
+
+      <motion.div 
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+        drag="y"
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 100 || info.velocity.y > 500) {
+            onClose();
+          }
+        }}
+        className="relative w-full max-w-2xl bg-[#111317] rounded-t-[2.5rem] max-h-[90vh] flex flex-col shadow-2xl z-10 touch-none"
+      >
         <div
-          onClick={onClose}
-          className="w-16 h-1.5 bg-zinc-800 rounded-full mx-auto mt-4 mb-6 shrink-0 cursor-pointer"
+          className="w-16 h-1.5 bg-zinc-800 rounded-full mx-auto mt-4 mb-6 shrink-0"
         />
 
         <div className="px-8 pb-6 border-b border-white/5">
@@ -92,7 +113,7 @@ export function CartDrawer({
             Finalizar pedido (R$ {total.toFixed(2)})
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

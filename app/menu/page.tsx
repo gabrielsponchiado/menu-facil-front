@@ -10,6 +10,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailDrawer } from "@/components/ProductDetailDrawer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { AISuggestionInput } from "@/components/AISuggestionInput";
+import { AnimatePresence } from "framer-motion";
 
 // Hooks
 import { useCart } from "@/hooks/useCart";
@@ -88,25 +89,29 @@ export default function MenuPage() {
 
       <AISuggestionInput onSuggest={(text) => console.log("AI Suggestion:", text)} />
 
-      {selectedDish && (
-        <ProductDetailDrawer 
-          dish={selectedDish} 
-          onAdd={(quantity) => {
-            addToCart(selectedDish, quantity);
-            setSelectedDish(null);
-          }} 
-          onClose={() => setSelectedDish(null)} 
-        />
-      )}
+      <AnimatePresence>
+        {selectedDish && (
+          <ProductDetailDrawer 
+            dish={selectedDish} 
+            onAdd={(quantity) => {
+              addToCart(selectedDish, quantity);
+              setSelectedDish(null);
+            }} 
+            onClose={() => setSelectedDish(null)} 
+          />
+        )}
+      </AnimatePresence>
 
-      {isCartOpen && (
-        <CartDrawer 
-          items={cart} 
-          onUpdateQuantity={updateCartQuantity} 
-          onCheckout={handleCheckout} 
-          onClose={() => setIsCartOpen(false)} 
-        />
-      )}
+      <AnimatePresence>
+        {isCartOpen && (
+          <CartDrawer 
+            items={cart} 
+            onUpdateQuantity={updateCartQuantity} 
+            onCheckout={handleCheckout} 
+            onClose={() => setIsCartOpen(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
