@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
 import { Dish } from "@/types";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface CartItem {
   dish: Dish;
