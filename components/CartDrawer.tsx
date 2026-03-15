@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
 import { Dish } from "@/types";
 import { motion } from "framer-motion";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface CartItem {
   dish: Dish;
@@ -23,6 +24,7 @@ export function CartDrawer({
   onCheckout,
   onClose,
 }: CartDrawerProps) {
+  useScrollLock(true);
   const total = items.reduce(
     (acc, item) => acc + item.dish.price * item.quantity,
     0,

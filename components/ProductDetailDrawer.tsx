@@ -5,6 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
 import { Dish } from "@/types";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface ProductDetailDrawerProps {
   dish: Dish;
@@ -13,6 +14,7 @@ interface ProductDetailDrawerProps {
 }
 
 export function ProductDetailDrawer({ dish, onAdd, onClose }: ProductDetailDrawerProps) {
+  useScrollLock(true);
   const [quantity, setQuantity] = useState(1);
 
   return (

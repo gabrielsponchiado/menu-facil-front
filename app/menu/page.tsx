@@ -15,7 +15,6 @@ import { AnimatePresence } from "framer-motion";
 // Hooks
 import { useCart } from "@/hooks/useCart";
 import { useMenu } from "@/hooks/useMenu";
-import { useEffect } from "react";
 
 export default function MenuPage() {
   const { 
@@ -35,19 +34,6 @@ export default function MenuPage() {
     setSelectedDish,
     filteredDishes
   } = useMenu();
-
-  // Bloquear scroll quando um drawer estiver aberto
-  useEffect(() => {
-    if (selectedDish || isCartOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [selectedDish, isCartOpen]);
 
   const handleCheckout = () => {
     alert("Pedido enviado!");
