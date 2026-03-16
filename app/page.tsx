@@ -11,13 +11,12 @@ export default function RegisterTabletPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const router = useRouter();
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    if (!name.trim()) {
-      newErrors.name = "Nome é obrigatório";
-    }
+    if (!name.trim()) newErrors.name = "Nome é obrigatório";
 
     if (!email.trim()) {
       newErrors.email = "E-mail é obrigatório";
@@ -25,58 +24,60 @@ export default function RegisterTabletPage() {
       newErrors.email = "E-mail inválido";
     }
 
-    if (!phone.trim()) {
-      newErrors.phone = "Telefone é obrigatório";
-    }
+    if (!phone.trim()) newErrors.phone = "Telefone é obrigatório";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const router = useRouter();
-
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, "").slice(0, 11);
-
-    if (numbers.length > 10) {
+    if (numbers.length > 10)
       return numbers.replace(/^(\d{2})(\d{5})(\d{4})$/, "($1) $2-$3");
-    }
-
-    if (numbers.length > 6) {
+    if (numbers.length > 6)
       return numbers.replace(/^(\d{2})(\d{4})(\d{0,4})$/, "($1) $2-$3");
-    }
-
-    if (numbers.length > 2) {
-      return numbers.replace(/^(\d{2})(\d+)/, "($1) $2");
-    }
-
-    if (numbers.length > 0) {
-      return numbers.replace(/^(\d+)/, "($1");
-    }
-
+    if (numbers.length > 2) return numbers.replace(/^(\d{2})(\d+)/, "($1) $2");
+    if (numbers.length > 0) return numbers.replace(/^(\d+)/, "($1");
     return "";
   };
 
-  const isValidEmail = (email: string) => {
-    return /\S+@\S+\.\S+/.test(email);
-  };
+  const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    const customer = {
-      name,
-      email,
-      phone: cleanPhone,
-    };
+    try {
+      const res = await fetch("/api/user/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, phone: cleanPhone }),
+      });
 
-    localStorage.setItem("customer", JSON.stringify(customer));
+      if (!res.ok) {
+        const loginRes = await fetch(
+          `/api/user/login?email=${encodeURIComponent(email)}`,
+        );
 
-    router.push("/menu");
+        if (!loginRes.ok) {
+          throw new Error("Não foi possível autenticar o usuário.");
+        }
+
+        const loginData = await loginRes.json();
+        localStorage.setItem("customer", JSON.stringify(loginData));
+        router.push("/menu");
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem("customer", JSON.stringify(data));
+      router.push("/menu");
+    } catch (error) {
+      console.error("Erro ao registrar usuário:", error);
+      alert("Erro ao cadastrar. Tente novamente.");
+    }
   };
 
   const clearError = (field: keyof FormErrors) => {
@@ -97,7 +98,6 @@ export default function RegisterTabletPage() {
             <div className="w-10 h-10 border-2 border-white rounded-full flex items-center justify-center relative">
               <Power className="w-5 h-5 text-white" />
             </div>
-
             <span className="font-bold text-xl tracking-tight leading-none flex flex-col uppercase">
               RS
               <span className="text-[10px] tracking-widest text-[#a1a1aa] font-medium leading-none mt-1">
@@ -115,7 +115,6 @@ export default function RegisterTabletPage() {
               <label htmlFor="name" className="sr-only">
                 Nome
               </label>
-
               <Input
                 id="name"
                 type="text"
@@ -133,7 +132,6 @@ export default function RegisterTabletPage() {
               <label htmlFor="email" className="sr-only">
                 E-mail
               </label>
-
               <Input
                 id="email"
                 type="email"
@@ -151,11 +149,11 @@ export default function RegisterTabletPage() {
               <label htmlFor="phone" className="sr-only">
                 Telefone
               </label>
-
               <Input
                 id="phone"
                 type="tel"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))}
                 onFocus={() => clearError("phone")}
@@ -171,7 +169,7 @@ export default function RegisterTabletPage() {
             type="submit"
             className="w-full bg-blue-500 text-white font-medium text-xl py-5 rounded-xl disabled:opacity-50 transition-opacity"
           >
-            Cadastrar
+            Entrar
           </button>
         </form>
       </main>

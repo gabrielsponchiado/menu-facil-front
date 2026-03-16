@@ -10,7 +10,7 @@ interface ProductCardProps {
 
 export function ProductCard({ dish, onClick }: ProductCardProps) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-[#1c1c1e] rounded-3xl p-4 flex gap-4 cursor-pointer active:scale-95 transition-all"
     >
@@ -24,7 +24,13 @@ export function ProductCard({ dish, onClick }: ProductCardProps) {
         </div>
       </div>
       <div className="w-36 h-36 relative rounded-2xl overflow-hidden shadow-xl shrink-0">
-        <Image src={dish.image} alt={dish.name} fill className="object-cover" />
+        <Image
+          src={dish.image}
+          alt={dish.name}
+          fill
+          sizes="144px"
+          className="object-cover"
+        />
       </div>
     </div>
   );

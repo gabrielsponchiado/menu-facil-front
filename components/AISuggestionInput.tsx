@@ -28,7 +28,7 @@ export function AISuggestionInput({ onSuggest }: AISuggestionInputProps) {
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Peça uma sugestão para a IA"
+          placeholder="Ex: frango, vegetariano, vegano..."
           className="w-full bg-zinc-900/90 backdrop-blur-xl py-5 px-6 pr-14 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
         />
         <button 

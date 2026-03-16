@@ -1,14 +1,15 @@
 "use client";
 
-import { ShoppingCart } from "lucide-react";
+import { ShoppingCart, ClipboardList } from "lucide-react";
 import { Power } from "lucide-react";
 
 interface MenuHeaderProps {
   totalItems: number;
   onOpenCart: () => void;
+  onOpenHistory: () => void;
 }
 
-export function MenuHeader({ totalItems, onOpenCart }: MenuHeaderProps) {
+export function MenuHeader({ totalItems, onOpenCart, onOpenHistory }: MenuHeaderProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-6 py-6 flex items-center justify-between glass-morphism bg-[#111317]/80 backdrop-blur-xl">
       <div className="flex items-center gap-2">
@@ -18,21 +19,35 @@ export function MenuHeader({ totalItems, onOpenCart }: MenuHeaderProps) {
           </div>
           <span className="font-bold text-xl tracking-tight leading-none flex flex-col uppercase">
             RS
-            <span className="text-[10px] tracking-widest text-[#a1a1aa] font-medium leading-none mt-1">Solutions</span>
+            <span className="text-[10px] tracking-widest text-[#a1a1aa] font-medium leading-none mt-1">
+              Solutions
+            </span>
           </span>
         </div>
       </div>
-      <button 
-        onClick={onOpenCart}
-        className="relative p-2 text-zinc-400 hover:text-white transition-colors"
-      >
-        <ShoppingCart className="w-6 h-6 text-white" />
-        {totalItems > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full text-[10px] font-bold flex items-center justify-center animate-in zoom-in duration-300">
-            {totalItems}
-          </span>
-        )}
-      </button>
+
+      <div className="flex items-center gap-2">
+        {/* botão histórico de pedidos */}
+        <button
+          onClick={onOpenHistory}
+          className="relative p-2 text-zinc-400 hover:text-white transition-colors"
+        >
+          <ClipboardList className="w-6 h-6 text-white" />
+        </button>
+
+        {/* botão carrinho */}
+        <button
+          onClick={onOpenCart}
+          className="relative p-2 text-zinc-400 hover:text-white transition-colors"
+        >
+          <ShoppingCart className="w-6 h-6 text-white" />
+          {totalItems > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full text-[10px] font-bold flex items-center justify-center animate-in zoom-in duration-300">
+              {totalItems}
+            </span>
+          )}
+        </button>
+      </div>
     </header>
   );
 }
