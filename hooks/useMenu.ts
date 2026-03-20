@@ -22,7 +22,6 @@ const CATEGORY_MAP: Record<number, string> = {
   4: "Sobremesas",
 };
 
-// Uma foto por categoria
 const CATEGORY_IMAGE: Record<number, string> = {
   1: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=800&auto=format&fit=crop", // Massas
   2: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop", // Lanches
