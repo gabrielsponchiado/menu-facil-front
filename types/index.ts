@@ -6,6 +6,7 @@ export interface Dish {
   image: string;
   category: string;
   recommended?: boolean;
+  fallbackImage?: string;
 }
 
 export interface AISuggestion {

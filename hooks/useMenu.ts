@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Dish } from "@/types";
+import { authFetch } from "@/utils/auth";
 
 interface MenuItemAPI {
   id_item: number;
@@ -23,42 +24,65 @@ const CATEGORY_MAP: Record<number, string> = {
 };
 
 const CATEGORY_IMAGE: Record<number, string> = {
-  1: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=800&auto=format&fit=crop", // Massas
-  2: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop", // Lanches
-  3: "https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=800&auto=format&fit=crop", // Bebidas
-  4: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=800&auto=format&fit=crop", // Sobremesas
+  1: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?q=80&w=800&auto=format&fit=crop",
+  2: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop",
+  3: "https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=800&auto=format&fit=crop",
+  4: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=800&auto=format&fit=crop",
 };
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=800&auto=format&fit=crop";
 
+// Converte nome do prato para slug
+function nameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+// Tenta usar imagem local, senão usa fallback da categoria
+function getImage(name: string, id_category: number | null): string {
+  const slug = nameToSlug(name);
+  // Fallback para imagens não encontradas tratadas pelo onError no componente
+  return `/images/dishes/${slug}.jpg`;
+}
+
 function mapAPIToDish(item: MenuItemAPI): Dish {
-  const category = item.id_category ? (CATEGORY_MAP[item.id_category] ?? "Outros") : "Outros";
-  const image = item.id_category ? (CATEGORY_IMAGE[item.id_category] ?? FALLBACK_IMAGE) : FALLBACK_IMAGE;
+  const category = item.id_category
+    ? (CATEGORY_MAP[item.id_category] ?? "Outros")
+    : "Outros";
 
   return {
     id: String(item.id_item),
     name: item.name,
     description: item.description ?? "",
     price: item.price,
-    image,
+    image: getImage(item.name, item.id_category),
     category,
-  };
+    fallbackImage: item.id_category
+      ? (CATEGORY_IMAGE[item.id_category] ?? FALLBACK_IMAGE)
+      : FALLBACK_IMAGE,
+  } as Dish & { fallbackImage: string };
 }
 
-export function useMenu(activeCategory: string, setActiveCategory: (cat: string) => void) {
+export function useMenu(
+  activeCategory: string,
+  setActiveCategory: (cat: string) => void,
+) {
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [firstCategory, setFirstCategory] = useState<string>("");
 
   useEffect(() => {
     async function fetchMenu() {
       try {
         setIsLoading(true);
-        const res = await fetch("/api/menu");
+        const res = await authFetch("/api/menu");
         if (!res.ok) throw new Error("Erro ao buscar menu");
 
         const data: MenuItemAPI[] = await res.json();
@@ -66,15 +90,13 @@ export function useMenu(activeCategory: string, setActiveCategory: (cat: string)
         const mapped = available.map(mapAPIToDish);
 
         const uniqueCategories = Array.from(
-          new Set(mapped.map((d) => d.category))
+          new Set(mapped.map((d) => d.category)),
         );
-
         setAllDishes(mapped);
         setCategories(uniqueCategories);
 
         if (uniqueCategories.length > 0 && !activeCategory) {
           setActiveCategory(uniqueCategories[0]);
-          setFirstCategory(uniqueCategories[0]);
         }
       } catch (err) {
         console.error(err);
@@ -83,7 +105,6 @@ export function useMenu(activeCategory: string, setActiveCategory: (cat: string)
         setIsLoading(false);
       }
     }
-
     fetchMenu();
   }, []);
 
@@ -96,6 +117,5 @@ export function useMenu(activeCategory: string, setActiveCategory: (cat: string)
     categories,
     isLoading,
     error,
-    firstCategory,
   };
 }

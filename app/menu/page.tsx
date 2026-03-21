@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { Sparkles } from "lucide-react";
 
 import { MenuHeader } from "@/components/MenuHeader";
 import { CategoryFilters } from "@/components/CategoryFilters";
@@ -11,11 +12,14 @@ import { ProductDetailDrawer } from "@/components/ProductDetailDrawer";
 import { CartDrawer } from "@/components/CartDrawer";
 import { OrderHistoryDrawer } from "@/components/OrderHistoryDrawer";
 import { AISuggestionInput } from "@/components/AISuggestionInput";
+import { SuggestionsModal } from "@/components/SuggestionsModal";
+import { PaymentModal } from "@/components/PaymentModal";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle } from "lucide-react";
 
 import { useCart } from "@/hooks/useCart";
 import { useMenu } from "@/hooks/useMenu";
+import { authFetch, getAuthHeader } from "@/utils/auth";
 import { Dish } from "@/types";
 
 interface AIRecommendation {
@@ -24,7 +28,6 @@ interface AIRecommendation {
   price: number;
   id_item: number;
   id_category: number;
-  category?: { name: string; description: string };
 }
 
 const SUGERIDOS = "Sugeridos";
@@ -35,7 +38,29 @@ const CATEGORY_IMAGE: Record<number, string> = {
   3: "https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=800&auto=format&fit=crop",
   4: "https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=800&auto=format&fit=crop",
 };
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=800&auto=format&fit=crop";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=800&auto=format&fit=crop";
+
+function nameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
+function mapRecommendationToDish(r: AIRecommendation): Dish {
+  return {
+    id: String(r.id_item),
+    name: r.name,
+    description: r.description,
+    price: r.price,
+    image: `/images/dishes/${nameToSlug(r.name)}.jpg`,
+    fallbackImage: CATEGORY_IMAGE[r.id_category] ?? FALLBACK_IMAGE,
+    category: SUGERIDOS,
+  };
+}
 
 export default function MenuPage() {
   const router = useRouter();
@@ -44,14 +69,19 @@ export default function MenuPage() {
   const [aiError, setAiError] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
+  const [isAIInputOpen, setIsAIInputOpen] = useState(false);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    orderId: number;
+    qrPath: string;
+    totalPrice: number;
+  } | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-  // redireciona para a página inicial se não estiver logado
   useEffect(() => {
-    const customer = localStorage.getItem("customer");
-    if (!customer) {
-      router.push("/");
-    }
+    const token = localStorage.getItem("token");
+    if (!token) router.push("/");
   }, []);
 
   const {
@@ -63,7 +93,6 @@ export default function MenuPage() {
     clearCart,
     totalCartItems,
   } = useCart();
-
   const {
     selectedDish,
     setSelectedDish,
@@ -77,27 +106,24 @@ export default function MenuPage() {
 
   const handleCheckout = async () => {
     try {
-      const customerData = localStorage.getItem("customer");
-      if (!customerData) {
-        alert("Usuário não identificado. Por favor, volte à página inicial.");
-        return;
-      }
-      const customer = JSON.parse(customerData);
       const totalPrice = cart.reduce(
         (acc, item) => acc + item.dish.price * item.quantity,
-        0
+        0,
       );
-      const response = await fetch("/api/order", {
+      const response = await authFetch("/api/order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_user: customer.id_user, total_price: totalPrice }),
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ total_price: totalPrice }),
       });
       if (!response.ok) throw new Error("Erro ao realizar pedido");
-
-      clearCart();
+      const orderData = await response.json();
       setIsCartOpen(false);
-      setOrderSuccess(true);
-      setTimeout(() => setOrderSuccess(false), 3000);
+      // O clearCart só ocorre após confirmação real do pagamento no modal
+      setPaymentData({
+        orderId: orderData.order.id_order,
+        qrPath: orderData.qr_path,
+        totalPrice: totalPrice,
+      });
     } catch (error) {
       console.error(error);
       alert("Erro ao enviar pedido. Tente novamente.");
@@ -110,20 +136,13 @@ export default function MenuPage() {
       setAiError(false);
       setAiDishes([]);
       setActiveCategory(SUGERIDOS);
-
-      const customerData = localStorage.getItem("customer");
-      let userId = "anonymous";
-      if (customerData) {
-        const customer = JSON.parse(customerData);
-        userId = customer.id_user;
-      }
+      setIsAIInputOpen(false);
 
       const res = await fetch(
-        `/api/ai/suggest?user_text=${encodeURIComponent(text)}&user_id=${encodeURIComponent(userId)}`
+        `/api/ai/suggest?user_text=${encodeURIComponent(text)}`,
+        { headers: getAuthHeader() },
       );
-
       if (!res.ok) {
-        setAiDishes([]);
         setAiError(true);
         return;
       }
@@ -131,27 +150,82 @@ export default function MenuPage() {
       const data = await res.json();
       const parsed = typeof data === "string" ? JSON.parse(data) : data;
       const recommendations: AIRecommendation[] = parsed.recommendations ?? [];
-
-      const dishes: Dish[] = recommendations.map((r) => ({
-        id: String(r.id_item),
-        name: r.name,
-        description: r.description,
-        price: r.price,
-        image: CATEGORY_IMAGE[r.id_category] ?? FALLBACK_IMAGE,
-        category: SUGERIDOS,
-      }));
-
-      setAiDishes(dishes);
+      setAiDishes(recommendations.map(mapRecommendationToDish));
     } catch (error) {
       console.error(error);
-      setAiDishes([]);
       setAiError(true);
     } finally {
       setIsAiLoading(false);
     }
   };
 
-  const displayDishes = activeCategory === SUGERIDOS ? aiDishes : filteredDishes;
+  const handleProfileSuggest = async () => {
+    try {
+      setIsLoadingProfile(true);
+      setAiError(false);
+      setAiDishes([]);
+      setActiveCategory(SUGERIDOS);
+      setIsSuggestionsOpen(false);
+
+      const res = await authFetch("/api/suggest");
+      if (!res.ok) {
+        setAiError(true);
+        return;
+      }
+
+      const data: AIRecommendation[] = await res.json();
+      setAiDishes(data.map(mapRecommendationToDish));
+    } catch (error) {
+      console.error(error);
+      setAiError(true);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const handleWeatherSuggest = async () => {
+    try {
+      setIsLoadingWeather(true);
+      setAiError(false);
+      setAiDishes([]);
+      setActiveCategory(SUGERIDOS);
+      setIsSuggestionsOpen(false);
+
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject),
+      );
+
+      const res = await fetch("/api/weather-menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        }),
+      });
+      if (!res.ok) {
+        setAiError(true);
+        return;
+      }
+
+      const data = await res.json();
+      const dishes: AIRecommendation[] = data.dishes ?? [];
+      setAiDishes(dishes.map(mapRecommendationToDish));
+    } catch (error) {
+      console.error(error);
+      setAiError(true);
+    } finally {
+      setIsLoadingWeather(false);
+    }
+  };
+
+  const displayDishes =
+    activeCategory === SUGERIDOS ? aiDishes : filteredDishes;
+
+  if (isLoading && categories.length === 0) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen bg-[#111317] text-white flex flex-col font-sans pb-32 pt-20 overflow-x-hidden">
@@ -175,7 +249,10 @@ export default function MenuPage() {
       <CategoryFilters
         categories={allCategories}
         activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
+        setActiveCategory={(cat) => {
+          setActiveCategory(cat);
+          setIsAIInputOpen(false);
+        }}
       />
 
       <div className="px-6 mb-6">
@@ -190,51 +267,88 @@ export default function MenuPage() {
           <p className="text-red-400 text-center py-10">{error}</p>
         )}
         {isAiLoading && activeCategory === SUGERIDOS && (
-          <p className="text-zinc-500 text-center py-10">A IA está pensando...</p>
+          <p className="text-zinc-500 text-center py-10">
+            Buscando sugestões...
+          </p>
         )}
         {!isAiLoading && activeCategory === SUGERIDOS && aiError && (
           <div className="text-center py-16 space-y-2">
-            <p className="text-zinc-400 text-lg">Não foi possível buscar sugestões</p>
-            <p className="text-zinc-600 text-sm">Tente novamente em alguns instantes</p>
+            <p className="text-zinc-400 text-lg">
+              Não foi possível buscar sugestões
+            </p>
+            <p className="text-zinc-600 text-sm">
+              Tente novamente em alguns instantes
+            </p>
           </div>
         )}
-        {!isAiLoading && !aiError && activeCategory === SUGERIDOS && aiDishes.length === 0 && (
-          <div className="text-center py-16 space-y-2">
-            <p className="text-zinc-400 text-lg">Nenhuma sugestão ainda</p>
-            <p className="text-zinc-600 text-sm">Use o campo abaixo para pedir uma recomendação à IA</p>
-          </div>
-        )}
-        {!isLoading && !error && !(isAiLoading && activeCategory === SUGERIDOS) && displayDishes.map((dish) => (
-          <ProductCard key={dish.id} dish={dish} onClick={() => setSelectedDish(dish)} />
-        ))}
+        {!isAiLoading &&
+          !aiError &&
+          activeCategory === SUGERIDOS &&
+          aiDishes.length === 0 && (
+            <div className="text-center py-16 space-y-2">
+              <p className="text-zinc-400 text-lg">Nenhuma sugestão ainda</p>
+              <p className="text-zinc-600 text-sm">
+                Toque em ✨ para receber sugestões personalizadas
+              </p>
+            </div>
+          )}
+        {!isLoading &&
+          !error &&
+          !(isAiLoading && activeCategory === SUGERIDOS) &&
+          displayDishes.map((dish) => (
+            <ProductCard
+              key={dish.id}
+              dish={dish}
+              onClick={() => setSelectedDish(dish)}
+            />
+          ))}
       </div>
 
-      <AISuggestionInput onSuggest={handleAISuggest} />
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#111317] via-[#111317]/90 to-transparent z-10">
+        <div className="max-w-xl mx-auto">
+          <AnimatePresence mode="wait">
+            {activeCategory === SUGERIDOS ? (
+              <motion.div
+                key="ai-input"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+              >
+                <AISuggestionInput
+                  onSuggest={handleAISuggest}
+                  onClose={() => {}}
+                />
+              </motion.div>
+            ) : (
+              <motion.button
+                key="suggest-btn"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                onClick={() => setIsSuggestionsOpen(true)}
+                className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-4 rounded-full transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+              >
+                <Sparkles className="w-5 h-5" />
+                Sugestões para mim
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
 
       <AnimatePresence>
-        {orderSuccess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-6"
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 200 }}
-              className="bg-[#1c1c1e] rounded-3xl p-10 flex flex-col items-center text-center max-w-sm w-full shadow-2xl"
-            >
-              <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
-                <CheckCircle className="w-10 h-10 text-green-400" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Pedido enviado!</h2>
-              <p className="text-zinc-400 text-sm">
-                Seu pedido foi recebido e está sendo preparado.
-              </p>
-            </motion.div>
-          </motion.div>
+        {isSuggestionsOpen && (
+          <SuggestionsModal
+            onClose={() => setIsSuggestionsOpen(false)}
+            onWeather={handleWeatherSuggest}
+            onProfile={handleProfileSuggest}
+            onAI={() => {
+              setIsSuggestionsOpen(false);
+              setActiveCategory(SUGERIDOS);
+            }}
+            isLoadingWeather={isLoadingWeather}
+            isLoadingProfile={isLoadingProfile}
+          />
         )}
       </AnimatePresence>
 
@@ -242,7 +356,10 @@ export default function MenuPage() {
         {selectedDish && (
           <ProductDetailDrawer
             dish={selectedDish}
-            onAdd={(quantity) => { addToCart(selectedDish, quantity); setSelectedDish(null); }}
+            onAdd={(quantity) => {
+              addToCart(selectedDish, quantity);
+              setSelectedDish(null);
+            }}
             onClose={() => setSelectedDish(null)}
           />
         )}
@@ -255,6 +372,7 @@ export default function MenuPage() {
             onUpdateQuantity={updateCartQuantity}
             onCheckout={handleCheckout}
             onClose={() => setIsCartOpen(false)}
+            isCheckoutDisabled={!!paymentData}
           />
         )}
       </AnimatePresence>
@@ -262,6 +380,18 @@ export default function MenuPage() {
       <AnimatePresence>
         {isHistoryOpen && (
           <OrderHistoryDrawer onClose={() => setIsHistoryOpen(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {paymentData && (
+          <PaymentModal
+            orderId={paymentData.orderId}
+            qrPath={paymentData.qrPath}
+            totalPrice={paymentData.totalPrice}
+            onClose={() => setPaymentData(null)}
+            onConfirmed={() => clearCart()}
+          />
         )}
       </AnimatePresence>
     </div>
