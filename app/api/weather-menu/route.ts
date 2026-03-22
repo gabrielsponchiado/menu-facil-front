@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const authorization = request.headers.get("authorization") || "";
 
     const res = await fetch(
       "https://john-overvigorous-cameron.ngrok-free.dev/weather-menu",
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
           "ngrok-skip-browser-warning": "true",
+          "authorization": authorization,
         },
         body: JSON.stringify(body),
       }

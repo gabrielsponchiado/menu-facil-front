@@ -118,7 +118,7 @@ export default function MenuPage() {
       if (!response.ok) throw new Error("Erro ao realizar pedido");
       const orderData = await response.json();
       setIsCartOpen(false);
-      // O clearCart só ocorre após confirmação real do pagamento no modal
+      // clearCart() só é chamado após confirmação do pagamento
       setPaymentData({
         orderId: orderData.order.id_order,
         qrPath: orderData.qr_path,
@@ -198,7 +198,7 @@ export default function MenuPage() {
 
       const res = await fetch("/api/weather-menu", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({
           lat: position.coords.latitude,
           lon: position.coords.longitude,
@@ -304,10 +304,12 @@ export default function MenuPage() {
           ))}
       </div>
 
+      {/* Bottom bar — input IA na aba Sugeridos, botão nas outras */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#111317] via-[#111317]/90 to-transparent z-10">
         <div className="max-w-xl mx-auto">
           <AnimatePresence mode="wait">
             {activeCategory === SUGERIDOS ? (
+              /* Aba Sugeridos — mostra input da IA */
               <motion.div
                 key="ai-input"
                 initial={{ opacity: 0, y: 10 }}
@@ -320,6 +322,7 @@ export default function MenuPage() {
                 />
               </motion.div>
             ) : (
+              /* Outras abas — mostra botão de sugestões */
               <motion.button
                 key="suggest-btn"
                 initial={{ opacity: 0, y: 10 }}
@@ -336,6 +339,7 @@ export default function MenuPage() {
         </div>
       </div>
 
+      {/* Modal de sugestões */}
       <AnimatePresence>
         {isSuggestionsOpen && (
           <SuggestionsModal
