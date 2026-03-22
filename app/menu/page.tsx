@@ -78,6 +78,7 @@ export default function MenuPage() {
     totalPrice: number;
   } | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [aiInputFocus, setAiInputFocus] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -166,6 +167,7 @@ export default function MenuPage() {
       setAiDishes([]);
       setActiveCategory(SUGERIDOS);
       setIsSuggestionsOpen(false);
+      setAiInputFocus(false);
 
       const res = await authFetch("/api/suggest");
       if (!res.ok) {
@@ -190,6 +192,7 @@ export default function MenuPage() {
       setAiDishes([]);
       setActiveCategory(SUGERIDOS);
       setIsSuggestionsOpen(false);
+      setAiInputFocus(false);
 
       const position = await new Promise<GeolocationPosition>(
         (resolve, reject) =>
@@ -304,12 +307,10 @@ export default function MenuPage() {
           ))}
       </div>
 
-      {/* Bottom bar — input IA na aba Sugeridos, botão nas outras */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#111317] via-[#111317]/90 to-transparent z-10">
         <div className="max-w-xl mx-auto">
           <AnimatePresence mode="wait">
             {activeCategory === SUGERIDOS ? (
-              /* Aba Sugeridos — mostra input da IA */
               <motion.div
                 key="ai-input"
                 initial={{ opacity: 0, y: 10 }}
@@ -318,11 +319,9 @@ export default function MenuPage() {
               >
                 <AISuggestionInput
                   onSuggest={handleAISuggest}
-                  onClose={() => {}}
                 />
               </motion.div>
             ) : (
-              /* Outras abas — mostra botão de sugestões */
               <motion.button
                 key="suggest-btn"
                 initial={{ opacity: 0, y: 10 }}
@@ -339,7 +338,6 @@ export default function MenuPage() {
         </div>
       </div>
 
-      {/* Modal de sugestões */}
       <AnimatePresence>
         {isSuggestionsOpen && (
           <SuggestionsModal
@@ -349,6 +347,7 @@ export default function MenuPage() {
             onAI={() => {
               setIsSuggestionsOpen(false);
               setActiveCategory(SUGERIDOS);
+              setAiInputFocus(true);
             }}
             isLoadingWeather={isLoadingWeather}
             isLoadingProfile={isLoadingProfile}

@@ -5,12 +5,12 @@ import { useState } from "react";
 
 interface AISuggestionInputProps {
   onSuggest: (text: string) => void;
-  onClose: () => void;
+  autoFocus?: boolean;
 }
 
 export function AISuggestionInput({
   onSuggest,
-  onClose,
+  autoFocus = false,
 }: AISuggestionInputProps) {
   const [text, setText] = useState("");
 
@@ -31,8 +31,8 @@ export function AISuggestionInput({
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Digite aqui..."
-        autoFocus
+        placeholder="Ex: frango, vegetariano, vegano..."
+        autoFocus={autoFocus}
         className="w-full bg-zinc-900/90 backdrop-blur-xl py-5 px-6 pr-14 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
       />
       <button
