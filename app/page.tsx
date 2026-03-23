@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -39,7 +40,7 @@ export default function RegisterPage() {
       localStorage.setItem("token", token);
       router.push("/menu");
     } catch (error) {
-      alert("Erro ao cadastrar. Tente novamente.");
+      toast.error("Erro ao cadastrar. Tente novamente.");
     } finally {
       setIsLoading(false);
     }

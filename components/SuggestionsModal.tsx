@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Cloud, User, Bot, X } from "lucide-react";
+import { Cloud, User, Bot } from "lucide-react";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface SuggestionsModalProps {
@@ -47,12 +47,7 @@ export function SuggestionsModal({
       >
         <div className="w-16 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8" />
 
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Sugestões</h2>
-          <button onClick={onClose} className="p-2 text-zinc-500 hover:text-white transition-colors">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <h2 className="text-2xl font-bold mb-6">Sugestões</h2>
 
         <div className="flex flex-col gap-3">
           <button

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { authFetch } from "@/utils/auth";
+import { toast } from "sonner";
 import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface PaymentModalProps {
@@ -30,7 +31,7 @@ export function PaymentModal({ orderId, qrPath, totalPrice, onClose, onConfirmed
       onConfirmed();
       setTimeout(() => onClose(), 2500);
     } catch {
-      alert("Erro ao confirmar pagamento. Tente novamente.");
+      toast.error("Erro ao confirmar pagamento. Tente novamente.");
     } finally {
       setIsConfirming(false);
     }

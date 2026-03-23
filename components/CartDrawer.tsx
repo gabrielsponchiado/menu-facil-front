@@ -68,36 +68,45 @@ export function CartDrawer({
             </div>
           ) : (
             items.map((item) => (
-              <div key={item.dish.id} className="flex gap-4 items-center">
-                <div className="w-24 h-24 relative rounded-2xl overflow-hidden shrink-0">
-                  <Image
-                    src={item.dish.image}
-                    alt={item.dish.name}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
-                  />
+                <div key={item.dish.id} className="flex gap-4 items-start pb-4">
+                  <div className="w-24 h-24 relative rounded-2xl overflow-hidden shrink-0">
+                    <Image
+                      src={item.dish.image}
+                      alt={item.dish.name}
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-lg uppercase leading-tight mb-1 truncate">
+                      {item.dish.name}
+                    </h3>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-blue-500 font-bold text-lg">
+                        R$ {item.dish.price.toFixed(2)}
+                      </p>
+                      
+                      <div className="flex items-center gap-3 border border-zinc-800 rounded-xl px-3 py-1.5 bg-zinc-900/50">
+                        <button 
+                          onClick={() => onUpdateQuantity(item.dish.id, -1)}
+                          className="hover:bg-zinc-800 p-1 rounded-lg transition-colors"
+                        >
+                          <Minus className="w-3.5 h-3.5 text-zinc-500" />
+                        </button>
+                        <span className="font-bold text-sm min-w-[20px] text-center">
+                          {item.quantity}
+                        </span>
+                        <button 
+                          onClick={() => onUpdateQuantity(item.dish.id, 1)}
+                          className="hover:bg-zinc-800 p-1 rounded-lg transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-white" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg uppercase leading-tight">
-                    {item.dish.name}
-                  </h3>
-                  <p className="text-blue-500 font-bold text-lg">
-                    R$ {item.dish.price.toFixed(2)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4 border border-zinc-800 rounded-xl px-3 py-2">
-                  <button onClick={() => onUpdateQuantity(item.dish.id, -1)}>
-                    <Minus className="w-4 h-4 text-zinc-600" />
-                  </button>
-                  <span className="font-bold text-sm w-3 text-center">
-                    {item.quantity}
-                  </span>
-                  <button onClick={() => onUpdateQuantity(item.dish.id, 1)}>
-                    <Plus className="w-4 h-4 text-white" />
-                  </button>
-                </div>
-              </div>
             ))
           )}
         </div>

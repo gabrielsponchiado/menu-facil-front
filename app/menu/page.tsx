@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 import { MenuHeader } from "@/components/MenuHeader";
 import { CategoryFilters } from "@/components/CategoryFilters";
@@ -127,7 +128,7 @@ export default function MenuPage() {
       });
     } catch (error) {
       console.error(error);
-      alert("Erro ao enviar pedido. Tente novamente.");
+      toast.error("Erro ao enviar pedido. Tente novamente.");
     }
   };
 

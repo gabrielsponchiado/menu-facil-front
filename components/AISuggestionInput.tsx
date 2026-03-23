@@ -31,7 +31,7 @@ export function AISuggestionInput({
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Ex: frango, vegetariano, vegano..."
+        placeholder="O que quer comer hoje?"
         autoFocus={autoFocus}
         className="w-full bg-zinc-900/90 backdrop-blur-xl py-5 px-6 pr-14 text-white placeholder:text-zinc-500 focus:outline-none transition-all"
       />

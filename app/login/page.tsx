@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Power } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -38,7 +39,7 @@ export default function LoginPage() {
       localStorage.setItem("token", token);
       router.push("/menu");
     } catch (error: any) {
-      alert(error.message || "Erro ao entrar. Tente novamente.");
+      toast.error(error.message || "Erro ao entrar. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
