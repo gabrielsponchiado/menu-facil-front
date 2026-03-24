@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Trash2, Loader2 } from "lucide-react";
 import { Dish } from "@/types";
 import { motion } from "framer-motion";
 import { useScrollLock } from "@/hooks/useScrollLock";
@@ -17,6 +17,7 @@ interface CartDrawerProps {
   onCheckout: () => void;
   onClose: () => void;
   isCheckoutDisabled?: boolean;
+  isCheckingOut?: boolean;
 }
 
 export function CartDrawer({
@@ -25,6 +26,7 @@ export function CartDrawer({
   onCheckout,
   onClose,
   isCheckoutDisabled,
+  isCheckingOut,
 }: CartDrawerProps) {
   useScrollLock(true);
   const total = items.reduce(
@@ -92,7 +94,11 @@ export function CartDrawer({
                           onClick={() => onUpdateQuantity(item.dish.id, -1)}
                           className="hover:bg-zinc-800 p-1 rounded-lg transition-colors"
                         >
-                          <Minus className="w-3.5 h-3.5 text-zinc-500" />
+                          {item.quantity === 1 ? (
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          ) : (
+                            <Minus className="w-3.5 h-3.5 text-zinc-500" />
+                          )}
                         </button>
                         <span className="font-bold text-sm min-w-[20px] text-center">
                           {item.quantity}
@@ -113,12 +119,19 @@ export function CartDrawer({
         <div className="p-8 border-t border-white/5">
           <button
             onClick={onCheckout}
-            disabled={items.length === 0}
-            className="w-full bg-blue-600 text-white text-xl font-bold py-5 rounded-2xl active:opacity-90 disabled:opacity-50 transition-opacity"
+            disabled={items.length === 0 || isCheckingOut || isCheckoutDisabled}
+            className="w-full bg-blue-600 text-white text-xl font-bold py-5 rounded-4xl active:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
           >
-            {isCheckoutDisabled
-              ? "Aguardando pagamento..."
-              : `Finalizar pedido (R$ ${total.toFixed(2)})`}
+            {isCheckingOut ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                Processando...
+              </>
+            ) : isCheckoutDisabled ? (
+              "Aguardando pagamento..."
+            ) : (
+              `Finalizar pedido (R$ ${total.toFixed(2)})`
+            )}
           </button>
         </div>
       </motion.div>

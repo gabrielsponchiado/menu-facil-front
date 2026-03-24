@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Sparkles } from "lucide-react";
-import { toast } from "sonner";
 
 import { MenuHeader } from "@/components/MenuHeader";
 import { CategoryFilters } from "@/components/CategoryFilters";
@@ -15,6 +14,7 @@ import { OrderHistoryDrawer } from "@/components/OrderHistoryDrawer";
 import { AISuggestionInput } from "@/components/AISuggestionInput";
 import { SuggestionsModal } from "@/components/SuggestionsModal";
 import { PaymentModal } from "@/components/PaymentModal";
+import { ComboModal } from "@/components/ComboModal";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -80,6 +80,11 @@ export default function MenuPage() {
   } | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [aiInputFocus, setAiInputFocus] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [comboData, setComboData] = useState<{
+    items: any[];
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -106,21 +111,64 @@ export default function MenuPage() {
 
   const allCategories = [...categories, SUGERIDOS];
 
-  const handleCheckout = async () => {
+  const fetchCombo = async (dishName: string) => {
     try {
-      const totalPrice = cart.reduce(
+      const res = await authFetch(`/api/combo/${encodeURIComponent(dishName)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.items && data.items.length > 0) return data;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const checkComboBeforeCheckout = async () => {
+    if (cart.length === 0) return;
+    setIsCheckingOut(true);
+    try {
+      // pega o item de maior valor do carrinho para sugerir combo com base nele
+      const mainItem = cart.reduce((prev, current) => 
+        (prev.dish.price > current.dish.price) ? prev : current
+      );
+      
+      const combo = await fetchCombo(mainItem.dish.name);
+      if (combo) {
+        setComboData(combo);
+        setIsCheckingOut(false);
+      } else {
+        await handleCheckout();
+      }
+    } catch {
+      await handleCheckout();
+    }
+  };
+
+  const handleCheckout = async (extraDish?: Dish) => {
+    setIsCheckingOut(true);
+    try {
+      setComboData(null);
+      let totalPrice = cart.reduce(
         (acc, item) => acc + item.dish.price * item.quantity,
         0,
       );
+
+      if (extraDish) {
+        totalPrice += extraDish.price;
+        addToCart(extraDish, 1);
+      }
+
       const response = await authFetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({ total_price: totalPrice }),
       });
+      
       if (!response.ok) throw new Error("Erro ao realizar pedido");
+      
       const orderData = await response.json();
       setIsCartOpen(false);
-      // clearCart() só é chamado após confirmação do pagamento
+      
       setPaymentData({
         orderId: orderData.order.id_order,
         qrPath: orderData.qr_path,
@@ -128,10 +176,13 @@ export default function MenuPage() {
       });
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao enviar pedido. Tente novamente.");
+      alert("Erro ao enviar pedido. Tente novamente.");
+    } finally {
+      setIsCheckingOut(false);
     }
   };
 
+  // Sugestão por texto (IA)
   const handleAISuggest = async (text: string) => {
     try {
       setIsAiLoading(true);
@@ -161,6 +212,7 @@ export default function MenuPage() {
     }
   };
 
+  // Sugestão por preferência do perfil
   const handleProfileSuggest = async () => {
     try {
       setIsLoadingProfile(true);
@@ -186,6 +238,7 @@ export default function MenuPage() {
     }
   };
 
+  // Sugestão por clima
   const handleWeatherSuggest = async () => {
     try {
       setIsLoadingWeather(true);
@@ -308,10 +361,12 @@ export default function MenuPage() {
           ))}
       </div>
 
+      {/* Bottom bar — input IA na aba Sugeridos, botão nas outras */}
       <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#111317] via-[#111317]/90 to-transparent z-10">
         <div className="max-w-xl mx-auto">
           <AnimatePresence mode="wait">
             {activeCategory === SUGERIDOS ? (
+              /* Aba Sugeridos — mostra input da IA */
               <motion.div
                 key="ai-input"
                 initial={{ opacity: 0, y: 10 }}
@@ -323,6 +378,7 @@ export default function MenuPage() {
                 />
               </motion.div>
             ) : (
+              /* Outras abas — mostra botão de sugestões */
               <motion.button
                 key="suggest-btn"
                 initial={{ opacity: 0, y: 10 }}
@@ -339,6 +395,7 @@ export default function MenuPage() {
         </div>
       </div>
 
+      {/* Modal de sugestões */}
       <AnimatePresence>
         {isSuggestionsOpen && (
           <SuggestionsModal
@@ -374,9 +431,10 @@ export default function MenuPage() {
           <CartDrawer
             items={cart}
             onUpdateQuantity={updateCartQuantity}
-            onCheckout={handleCheckout}
+            onCheckout={checkComboBeforeCheckout}
             onClose={() => setIsCartOpen(false)}
             isCheckoutDisabled={!!paymentData}
+            isCheckingOut={isCheckingOut}
           />
         )}
       </AnimatePresence>
@@ -384,6 +442,17 @@ export default function MenuPage() {
       <AnimatePresence>
         {isHistoryOpen && (
           <OrderHistoryDrawer onClose={() => setIsHistoryOpen(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {comboData && (
+          <ComboModal
+            items={comboData.items}
+            message={comboData.message}
+            onAdd={(dish) => handleCheckout(dish)}
+            onClose={() => handleCheckout()}
+          />
         )}
       </AnimatePresence>
 

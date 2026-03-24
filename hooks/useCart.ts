@@ -44,11 +44,10 @@ export function useCart() {
     setCart((prev) =>
       prev.map((item) => {
         if (item.dish.id === id) {
-          const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
+          return { ...item, quantity: item.quantity + delta };
         }
         return item;
-      })
+      }).filter((item) => item.quantity > 0)
     );
   };
 

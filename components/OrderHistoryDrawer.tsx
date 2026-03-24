@@ -39,8 +39,13 @@ export function OrderHistoryDrawer({ onClose }: OrderHistoryDrawerProps) {
         const res = await authFetch("/api/order/history");
         if (!res.ok) throw new Error();
         const data: Order[] = await res.json();
+        const validStatuses = ["pago", "paid", "confirmado", "confirmed"];
+        const confirmedOrders = data.filter(order => 
+          validStatuses.includes(order.status?.toLowerCase() || "")
+        );
+        
         setOrders(
-          data.sort(
+          confirmedOrders.sort(
             (a, b) =>
               new Date(b.created_at).getTime() -
               new Date(a.created_at).getTime(),
